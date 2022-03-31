@@ -1,3 +1,4 @@
+//Improting required Lib
 const express = require('express')
 const User = require('../models/user')
 const router = new express.Router()
@@ -6,6 +7,7 @@ const multer = require('multer')
 const sharp = require('sharp')
 const {welcomeEmail, leaveEmail}= require('../emails/account') 
 
+//middleware to check image size and type
 const upload = multer({
     limits:{
         fileSize:1000000
@@ -20,6 +22,19 @@ const upload = multer({
 
 //User Routes
 
+//Register a user
+router.post('/users',async (req,res)=>{
+    const user = new User(req.body)
+    try{
+        const token = await user.generateAuthToken()
+        welcomeEmail(user.email, user.name)
+        await user.save()
+        res.status(201).send({user, token})
+    }catch(e){
+        console.log(e)
+        res.status(400).send(e)
+    }
+})
 //Sign in
 router.post('/users/login', async (req,res) => {
     try{
@@ -57,6 +72,7 @@ router.post('/users/logoutall',auth, async (req, res, next) =>{
 
 })
 
+
 //Read All users
 router.get('/users',auth, async (req, res) =>{
     try{
@@ -79,6 +95,7 @@ router.get('/users/:id',async (req, res) =>{
         res.status(500).send()
     }
 })
+
 //Edit User Information
 router.patch('/users/me',auth ,async (req, res)=>{
     const updates = Object.keys(req.body)
@@ -96,19 +113,7 @@ router.patch('/users/me',auth ,async (req, res)=>{
         res.status(400).send()
     }
 })
-//Register a user
-router.post('/users',async (req,res)=>{
-    const user = new User(req.body)
-    try{
-        const token = await user.generateAuthToken()
-        welcomeEmail(user.email, user.name)
-        await user.save()
-        res.status(201).send({user, token})
-    }catch(e){
-        console.log(e)
-        res.status(400).send(e)
-    }
-})
+
 //Delete User
 router.delete('/users/me',auth, async (req,res)=>{
     try{
@@ -139,6 +144,7 @@ router.delete('/users/me/avatar', auth, async (req,res) =>{
     res.send()
 })
 
+//view avatar
 router.get('/users/:id/avatar', async (req, res) =>{
     try{
         const user = await User.findById(req.params.id)
